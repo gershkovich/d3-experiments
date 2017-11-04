@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>String Interpolation</title>
+    <link rel="stylesheet" type="text/css" href="../../css/styles.css"/>
+    <script type="text/javascript" src="../../lib/d3.js"></script>
+</head>
+
+<body>
+
+<div id="font" class="clear">
+    <span>Font Interpolation<br></span>
+</div>
+
+<script type="text/javascript">
+
+    var max = 11, data = [];
+
+    var sizeScale = d3.scaleLinear() // <-A
+        .domain([0, max])
+        .range([  // <-B
+            "italic bold 12px/30px Georgia, serif", 
+            "italic bold 120px/180px Georgia, serif"
+        ]);
+
+    for (var i = 0; i < max; ++i) data.push(i);
+
+    function render(data, scale, selector) { // <-C
+
+       //select cells for div div with #font id
+        var cells = d3.select(selector).selectAll("div.cell")
+                .data(data);
+
+        //boiler plate enter/add div/set class set style/append span sent style font
+        //and this is interesting a font is a linear scale that we created - sizeScale - that has range of fonts for 11 element domain
+        //so for each of the 11 points the d3 will find a corresponding font!
+        cells.enter()
+            .append("div")
+                .classed("cell", true)
+                .style("display", "inline-block")
+            .append("span")
+                .style("font", function(d,i){
+                    return scale(d); // <-D
+                })
+                //we finally add a text that is a number
+                .text(function(d,i){return i;}); // <-E
+    }
+
+    render(data, sizeScale, "#font");
+
+    //       Though we demonstrated string interpolation in D3 using a CSS font style as an example, D3 string interpolator is not only limited to handling CSS styles. It can basically handle any string and interpolates the embedded number as long as the number matches the following Regex pattern:
+    //      /[-+]?(?:\d+\.?\d*|\.?\d+)(?:[eE][-+]?\d+)?/g
+
+</script>
+
+</body>
+
+</html>
+
+

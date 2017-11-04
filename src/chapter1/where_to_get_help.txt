@@ -1,0 +1,24 @@
+Examples:
+The D3 gallery (https://github.com/d3/d3/wiki/Gallery ) contains some of the most interesting examples that you can find online regarding D3 usage. It contains examples on different visualization charts, specific techniques, and some interesting visualization implementations in the wild, among others.
+
+Christophe Viau's D3 Gallery (http://christopheviau.com/d3list/gallery.html ) is another D3 gallery with categorization that helps you find your desired visualization example online quickly.
+
+The D3 tutorials page (https://github.com/d3/d3/wiki/Tutorials ) contains a collection of tutorials, talks, and slides created by various contributors over time that demonstrates in detail how to use different D3 concepts and techniques.
+
+D3 plugins can be found at https://github.com/d3/d3-plugins . Maybe some features are missing in D3 for your visualization needs? Before you decide to implement your own, make sure that you check out the D3 plugin repository. It contains a wide variety of plugins that provide some of the common and, sometimes, uncommon features in the visualization world.
+
+The D3 API (https://github.com/d3/d3/blob/master/API.md ) is very well documented. This is where you can find detailed explanations for every function and property that the D3 library has to offer.
+
+Mike Bostok's Blocks (http://bl.ocks.org/mbostock ) is a D3 example site, where some of the more intriguing visualization examples can be found and is maintained by its author Mike Bostock.
+
+JS Bin (http://jsbin.com/ugacud/1/edit ) is a prebuilt D3 test and experiment environment completely hosted online. You can easily prototype a simple script using this tool or share your creation with other members in the community.
+
+JS Fiddle (http://jsfiddle.net/qAHC2/ ) is similar to JS Bin; it also is a hosted-online JavaScript code prototyping and sharing platform.
+
+
+
+Help:
+
+ck Overflow (http://stackoverflow.com/questions/tagged/d3.js ): Stack Overflow is the most popular community-based free Q&A site for technologists. D3 is a specific category on the Stack Overflow site to help you reach the experts and get an answer to your question quickly.
+
+The D3 Google group (https://groups.google.com/forum/?fromgroups#!forum/d3-js ): This is the official user group for not just D3 but also other related libraries in its ecosystem.

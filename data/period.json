@@ -1,0 +1,14 @@
+[
+  {"work": "Anna Karenina", "period":
+  [
+    {"name":"conception", "start": "2/24/1870"},
+    {"name":"First full draft", "start": "2/24/1870"},
+    {"name":"Russii Vestnik draft", "start": "2/24/1870", "comment": "novel without part 8)"},
+    {"name":"Part 8 published", "start": "2/24/1870", "comment":"Published as a separate edition"},
+    {"name":"Anna Karenina in full as separate edition", "start": "2/24/1870"}
+  ]
+  }
+
+]
+
+

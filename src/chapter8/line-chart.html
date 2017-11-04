@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Line Chart</title>
+    <link rel="stylesheet" type="text/css" href="../../css/styles.css"/>
+    <script type="text/javascript" src="../../lib/d3.js"></script>
+</head>
+
+<body>
+
+<script type="text/javascript">
+    //To see the chart conventions as it was explained by the creator of D3, please visit http://bl.ocks.org/mbostock/3019563 .
+
+    function lineChart() { // <-1A
+
+        var _chart = {};  //chart object  - this is entire chart object with all its functions
+
+        var _width = 600, _height = 300, // <-1B
+
+                _margins = {top: 30, left: 30, right: 30, bottom: 30},
+                _x, _y,
+
+                _data = [],
+                _colors = d3.scaleOrdinal(d3.schemeCategory10),
+                _svg,
+                _bodyG,
+                _line;
+
+        _x = d3.scaleLinear().domain([0, 10]);
+        _y =  d3.scaleLinear().domain([0, 10]);
+
+
+
+        /*
+         The render function defined on line 2A is responsible for creating the svg:svg element and setting its width and height (line 2B).
+         After that, it creates an svg:clipPath element that covers the entire chart body area.
+         The svg:clipPath element is used to restrict the region where paint can be applied.
+         In our case, we used it to restrict the line and dots that can be painted (only within the chart body area).
+         This code generates the following SVG element structure that defines the chart body:
+         */
+
+        _chart.render = function () { // <-2A
+
+            //make svg with axes if it does not exist
+            if (!_svg) {
+                _svg = d3.select("body").append("svg") // <-2B
+                        .attr("height", _height)
+                        .attr("width", _width);
+
+                renderAxes(_svg);
+
+                defineBodyClip(_svg);
+            }
+
+            renderBody(_svg);
+        };
+
+        function renderAxes(svg) {
+            var axesG = svg.append("g")
+                    .attr("class", "axes");
+
+            renderXAxis(axesG);
+
+            renderYAxis(axesG);
+        }
+
+        function renderXAxis(axesG){
+
+            var xAxis = d3.axisBottom()
+                    .scale(_x.range([0, quadrantWidth()]));
+
+            axesG.append("g")
+                    .attr("class", "x axis")
+                    .attr("transform", function () {
+                        return "translate(" + xStart() + "," + yStart() + ")";
+                    })
+                    .call(xAxis);
+
+            d3.selectAll("g.x g.tick")
+                .append("line")
+                    .classed("grid-line", true)
+                    .attr("x1", 0)
+                    .attr("y1", 0)
+                    .attr("x2", 0)
+                    .attr("y2", - quadrantHeight());
+        }
+
+        function renderYAxis(axesG){
+            var yAxis = d3.axisLeft()
+                    .scale(_y.range([quadrantHeight(), 0]));
+
+            axesG.append("g")
+                    .attr("class", "y axis")
+                    .attr("transform", function () {
+                        return "translate(" + xStart() + "," + yEnd() + ")";
+                    })
+                    .call(yAxis);
+
+             d3.selectAll("g.y g.tick")
+                .append("line")
+                    .classed("grid-line", true)
+                    .attr("x1", 0)
+                    .attr("y1", 0)
+                    .attr("x2", quadrantWidth())
+                    .attr("y2", 0);
+        }
+
+        function defineBodyClip(svg) { // <-2C
+            //For more information on clipping and masking, please visit https://www.w3.org/TR/SVG/masking.html .
+            var padding = 5;
+
+            svg.append("defs")
+                    .append("clipPath")
+                    .attr("id", "body-clip")
+                    .append("rect")
+                    .attr("x", 0 - padding)
+                    .attr("y", 0)
+                    .attr("width", quadrantWidth() + 2 * padding)
+                    .attr("height", quadrantHeight());
+        }
+
+        /*
+         The renderBody function defined on line 2D generates the svg:g element, which wraps all the chart body content
+         with a translation set according to the chart margin convention we have discussed in the previous section (line 2E).
+         */
+
+        function renderBody(svg) { // <-2D
+
+            if (!_bodyG)
+
+                _bodyG = svg.append("g")
+                        .attr("class", "body")
+                        .attr("transform", "translate("
+                            + xStart() + ","
+                            + yEnd() + ")") // <-2E
+                        .attr("clip-path", "url(#body-clip)");
+
+            renderLines();
+
+            renderDots();
+        }
+
+
+        /*
+         The line segments and dots are generated using techniques we introduced in Chapter 7, Getting into Shape.
+         The d3.line generator was created on line 4A to create svg:path that maps the data series.
+         The Enter-and-Update pattern is used to create the data line (line 4B). Line 4C sets a different color for each data line based on its index.
+         Lastly, line 4E sets the transition in the update mode to move the data line smoothly on each update.
+         The renderDots function performs a similar rendering logic that generates a set of svg:circle elements representing each data point (line 4E),
+         coordinating its color based on the data series index (line 4F),
+         and finally also initiates a transition on line 4G, so the dots can move with the line whenever the data is updated.
+
+         As illustrated by this recipe, creating a reusable chart component involves actually quite a bit of work.
+         However, more than two-thirds of the code is required to create peripheral graphical elements and accessors methods.
+         Therefore, in a real-world project, you can extract this logic and reuse a large part of this implementation for other charts;
+         though we did not do this in our recipes in order to reduce the complexity, you can quickly grasp all aspects of chart rendering.
+         Due to limited scope in this book, in later recipes, we will omit all peripheral rendering logic and only focus on the core
+         logic related to each chart type.Feel free to jump back to this recipe if you ever need to double-check the peripheral
+         rendering logic while reading the later recipes in this chapter.
+         */
+
+        function renderLines() {
+
+            _line = d3.line() //<-4A
+                            .x(function (d) { return _x(d.x); })
+                            .y(function (d) { return _y(d.y); });
+
+            var pathLines = _bodyG.selectAll("path.line")
+                    .data(_data);
+
+            pathLines
+                    .enter() //<-4B
+                        .append("path")
+                    .merge(pathLines)
+                        .style("stroke", function (d, i) {
+                            return _colors(i); //<-4C
+                        })
+                        .attr("class", "line")
+                    .transition() //<-4D
+                        .attr("d", function (d) { return _line(d); });
+        }
+
+        function renderDots() {
+
+            _data.forEach(function (list, i) {
+
+                var circle = _bodyG.selectAll("circle._" + i) //<-4E
+                        .data(list);
+
+                circle.enter()
+                        .append("circle")
+                    .merge(circle)
+                        .attr("class", "dot _" + i)
+                        .style("stroke", function (d) {
+                            return _colors(i); //<-4F
+                        })
+                    .transition() //<-4G
+                        .attr("cx", function (d) { return _x(d.x); })
+                        .attr("cy", function (d) { return _y(d.y); })
+                        .attr("r", 4.5);
+            });
+        }
+
+        function xStart() {
+            return _margins.left;
+        }
+
+        function yStart() {
+            return _height - _margins.bottom;
+        }
+
+        function xEnd() {
+            return _width - _margins.right;
+        }
+
+        function yEnd() {
+            return _margins.top;
+        }
+
+        function quadrantWidth() {
+            return _width - _margins.left - _margins.right;
+        }
+
+        function quadrantHeight() {
+            return _height - _margins.top - _margins.bottom;
+        }
+
+        _chart.width = function (w) {
+            if (!arguments.length) return _width;
+            _width = w;
+            return _chart;
+        };
+
+        _chart.height = function (h) { // <-1C
+            if (!arguments.length) return _height;
+            _height = h;
+            return _chart;
+        };
+
+        _chart.margins = function (m) {
+            if (!arguments.length) return _margins;
+            _margins = m;
+            return _chart;
+        };
+
+        _chart.colors = function (c) {
+            if (!arguments.length) return _colors;
+            _colors = c;
+            return _chart;
+        };
+
+
+//        //this looks like a stupid and confusing code chart x is x axis but why are we setting _x to the same thing!
+//        //it may be easier for writing mapping code but doing _chart.x instead of _x is much more clear.
+//        _chart.x = function (x)
+//        {
+//            if (!arguments.length)
+//            {
+//                return _x;
+//            }
+//            _x = x;
+//            return _chart;
+//        };
+//
+//        _chart.y = function (y)
+//        {
+//            if (!arguments.length)
+//            {
+//                return _y;
+//            }
+//            _y = y;
+//            return _chart;
+//        };
+
+        _chart.addSeries = function (series) { // <-1D
+            _data.push(series);
+            return _chart;
+        };
+
+        return _chart; // <-1E
+    }
+
+    function randomData() {
+        return Math.random() * 9;
+    }
+
+    function update() {
+
+        for (var i = 0; i < data.length; ++i) {
+
+            var series = data[i];
+
+            series.length = 0;
+            for (var j = 0; j < numberOfDataPoint; ++j)
+                series.push({x: j, y: randomData()});
+        }
+
+        chart.render();
+    }
+
+    //some other variables related to data two series, number of data points
+    var numberOfSeries = 2,
+        numberOfDataPoint = 11,
+        data = [];
+
+    for (var i = 0; i < numberOfSeries; ++i)
+
+        //that is an interesting mapping function  we first define range (11 in this case of numberOfDataPoint), then map it to random data and return
+        // x and y coordinates
+        data.push(d3.range(numberOfDataPoint).map(function (i) {
+            return {x: i, y: randomData()};
+        }));
+
+    //then we make chart with two axes
+
+
+    var chart = lineChart();
+
+   
+
+    data.forEach(function (series) {
+        chart.addSeries(series);
+    });
+
+    chart.render();
+
+
+</script>
+
+<div class="control-group">
+
+    <button onclick="update()">Update</button>
+</div>
+
+</body>
+
+</html>

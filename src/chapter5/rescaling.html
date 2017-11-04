@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Axis Rescaling</title>
+    <link rel="stylesheet" type="text/css" href="../../css/styles.css"/>
+    <script type="text/javascript" src="../../lib/d3.js"></script>
+</head>
+
+<body>
+
+<script type="text/javascript">
+
+    //we now have xAxisLength and yAxisLength
+    var height = 500,
+        width = 500, 
+        margin = 25,
+        xAxis, yAxis, xAxisLength, yAxisLength;
+
+    //same svg drawing
+    var svg = d3.select("body").append("svg")     
+            .attr("class", "axis")    
+            .attr("width", width)
+            .attr("height", height);
+    
+
+    //our functions for rendering axis
+    function renderXAxis(){
+
+        //determine entire length
+        xAxisLength = width - 2 * margin;
+
+        //create linear scale with domain from 0 to 100
+        //set range -  the entire length or axis (it is just a numeric value that maps to the domain)
+        var scale = d3.scaleLinear()
+                        .domain([0, 100])
+                        .range([0, xAxisLength]);
+
+        //make actual bottom axis
+        xAxis = d3.axisBottom()
+                .scale(scale);
+
+        //create g element with class x-axis, and use transform attr to set it correctly - then call axis here
+        svg.append("g")       
+            .attr("class", "x-axis")
+            .attr("transform", function(){ 
+                return "translate(" + margin + "," + (height - margin) + ")";
+            })
+            .call(xAxis);
+    }
+
+    //same as with x axis except the domain is in reverse to go from bottom up - 0 is at the top!
+    function renderYAxis(){        
+        yAxisLength = height - 2 * margin;
+    
+        var scale = d3.scaleLinear()
+                        .domain([100, 0])
+                        .range([0, yAxisLength]);
+    
+        yAxis = d3.axisLeft()
+                .scale(scale);
+
+        svg.append("g")       
+            .attr("class", "y-axis")
+            .attr("transform", function(){
+                return "translate(" + margin + "," + margin + ")";
+            })
+            .call(yAxis);
+    }   
+
+    //rescale
+    function rescale(){ // <-A
+
+        var max = Math.round(Math.random() * 100);
+
+        //change scale to a new domain see how we got scale from axis and changed the domain
+        xAxis.scale().domain([0, max]); // <-B
+
+        //now we just did transition function and called axis
+        svg.select("g.x-axis")
+            .transition()
+            .call(xAxis); // <-C
+
+        //same for y axis
+        yAxis.scale().domain([max, 0]);
+        svg.select("g.y-axis")
+            .transition()
+            .call(yAxis);
+        
+        renderXGridlines();
+        renderYGridlines();
+    }       
+
+    //render grid lines remains the same - select g.x-axis g.tick and and then draw another line implicitly for each tick!
+    function renderXGridlines(){
+        d3.selectAll("g.x-axis g.tick")
+                .select("line.grid-line")
+                .remove(); // <-D
+                
+        d3.selectAll("g.x-axis g.tick")
+                .append("line")
+                    .classed("grid-line", true)
+                    .attr("x1", 0)
+                    .attr("y1", 0)
+                    .attr("x2", 0)
+                    .attr("y2", - yAxisLength);
+    }
+    
+    function renderYGridlines(){
+        d3.selectAll("g.y-axis g.tick")
+                .select("line.grid-line").remove();
+        
+        d3.selectAll("g.y-axis g.tick")
+                .append("line") 
+                    .classed("grid-line", true)
+                    .attr("x1", 0)
+                    .attr("y1", 0)
+                    .attr("x2", xAxisLength)
+                    .attr("y2", 0);
+    }
+    
+    renderYAxis();
+    renderXAxis();
+    renderXGridlines();
+    renderYGridlines();
+</script>
+
+<div class="control-group">
+    <button onclick="rescale()">ReScale</button>
+</div>
+
+</body>
+
+</html>

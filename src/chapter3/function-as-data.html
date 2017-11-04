@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Function as Data</title>
+    <link rel="stylesheet" type="text/css" href="../../css/styles.css"/>
+    <script type="text/javascript" src="../../lib/d3.js"></script>
+</head>
+
+<body>
+<div id="container"></div>
+
+<script type="text/javascript">
+
+    //we defined an empty array
+    var data = []; // <- A
+
+    //created a function that takes some value and squares it
+    var datum = function (x) { // <- B
+        return 15 + x * x;
+    };
+
+    //anotehr function that just push datum - the above function into data (obviously pushing in the result)
+    //interesting that it does not take any parametes because we actually have a function within datum!
+    var newData = function () { // <- C
+        data.push(datum);
+        return data;
+    };
+
+    //now render
+    function render(){
+
+        //if I start shifting the array the visual result will not change at all
+//        if (data.length > 10)
+//        {
+//            data.shift();
+//            console.log(data);
+//        }
+        //creates container and assignes newData as data
+        //every time we run it newData function pushes new datum function into data and returns data
+        //so we have a growing array as a result
+        var divs = d3.select("#container")
+                    .selectAll("div")
+                    .data(newData); // <- D
+
+        divs.enter().append("div").append("span");
+
+        divs.attr("class", "v-bar")
+
+             //now for stile we got data - an array - with the datum function inside
+        //as the array data grows i increases and i is used as an input so we have the exponential growth.
+            .style("height", function (d, i) {
+                return d(i) + "px"; // <- E
+            })
+            .select("span") // <- F
+                .text(function(d, i){ 
+                    return d(i); // <- G
+                });
+
+        divs.exit().remove(); //nothing is actually removed here
+    }
+    
+    setInterval(function () {
+        render();
+    }, 1000);
+
+    render();
+</script>
+
+</body>
+
+</html>

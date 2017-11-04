@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Array as Data</title>
+    <link rel="stylesheet" type="text/css" href="../../css/styles.css"/>
+    <script type="text/javascript" src="../../lib/d3.js"></script>
+</head>
+
+<body>
+
+<script type="text/javascript">
+
+    //initial array of numbers
+    var data = [10, 15, 30, 50, 80, 65, 55, 30, 20, 10, 8]; // <- A
+
+    //the function that renders data and can be repeatedly invoked
+    function render(data) { // <- B
+
+        //bars is a hypothetical selection that exists only when the data is bound
+        //only then each elementd "div.h-bar" div with class h-bar is created
+        var bars = d3.select("body").selectAll("div.h-bar") // <- C
+                .data(data); // Update <- D  //update here means that a new set of data - and array is added to the selection
+
+
+        bars.exit() // <- K
+                .remove();
+        // Enter - makes it visible 
+        bars.enter() // <- E
+                .append("div") // <- F
+                    .attr("class", "h-bar").style("width", function (d) {
+                    return (d * 3) + "px"; // <- I
+                })
+                .text(function (d) {
+                    return d; // <- J
+                }); // <- G    //here all bars should become visible
+            
+            bars.merge(bars) // Enter + Update <- H
+                .style("width", function (d) {
+                    return (d * 3) + "px"; // <- I
+                })
+                .text(function (d) {
+                    return d; // <- J
+                });
+
+
+ bars.exit(bars) // Enter + Update <- H
+                .style("color","red");
+
+        // Exit
+        bars.exit() // <- K
+                .remove();
+    }
+
+    setInterval(function () { // <- L
+        data.shift();
+        data.push(Math.round(Math.random() * 100));
+        render(data);
+    }, 1500);
+
+    render(data);
+</script>
+
+</body>
+
+</html>

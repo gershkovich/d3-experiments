@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+    path {
+        fill: none;
+        stroke: #000;
+        stroke-width: 3px;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+    }
+
+</style>
+<svg width="960" height="500">
+    <rect fill="#fff" width="100%" height="100%"></rect>
+</svg>
+<!--<script src="//d3js.org/d3.v4.min.js"></script>-->
+<script type="text/javascript" src="../../lib/d3.js"></script>
+<script>
+
+    //assign line function to a variable
+    var line = d3.line()
+            .curve(d3.curveBasis);
+
+    //make svg element and add drag behavior
+    var svg = d3.select("svg");
+//
+//            .call(d3.drag()
+//                    .container(function ()
+//                    {
+//                        return this;
+//                    })  //not sure what this does
+//                    .subject(function ()
+//                    {
+//                        var p = [d3.event.x, d3.event.y];
+//                        return [p, p];
+//                    })  //that comes back as an array of identical arrays???
+//                    .on("start", dragstarted)); //on start call a function below
+
+    /*
+    The subject defines what is being dragged
+     drag.subject([subject]) <>
+
+     If subject is specified, sets the subject accessor to the specified object or function and returns the drag behavior.
+     If subject is not specified, returns the current subject accessor, which defaults to:
+
+      this is from api
+     function subject(d) {
+     return d == null ? {x: d3.event.x, y: d3.event.y} : d;
+     }
+     */
+
+    var d = d3.event.subject,  //
+            active = svg.append("path").datum(d) //active is a path with some data
+
+    function dragstarted()
+    {
+
+        var d = d3.event.subject,  //what is event subject
+                active = svg.append("path").datum(d), //active is a path with some data
+                x0 = d3.event.x,
+                y0 = d3.event.y;
+
+        d3.event.on("drag", function ()
+        {
+
+            var x1 = d3.event.x,     //get x and y coordinates of the mouse pointer
+                    y1 = d3.event.y,
+                    dx = x1 - x0,     //the difference between start and new position
+                    dy = y1 - y0;
+
+            if (dx * dx + dy * dy > 100)   //that makes increments of a 100 for the sum of squares
+            {
+                d.push([x0 = x1, y0 = y1]); //push and reassign the origin
+            }
+
+            else
+            {
+                d[d.length - 1] = [x1, y1];  //or just assign last value to the new position
+            }
+
+            active.attr("d", line);
+        });
+    }
+
+</script>

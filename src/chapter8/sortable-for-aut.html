@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+    body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        position: relative;
+        width: 960px;
+    }
+
+    .axis text {
+        font: 10px sans-serif;
+    }
+
+    .axis path,
+    .axis line {
+        fill: none;
+        stroke: #000;
+        shape-rendering: crispEdges;
+    }
+
+    .bar {
+        /*         fill: steelblue; */
+        fill-opacity: .9;
+    }
+
+    .x.axis path {
+        display: none;
+    }
+
+    label {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+
+    .my_div {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+         color: midnightblue;
+    }
+
+
+    .legend { /* NEW */
+        font-size: 12px; /* NEW */
+    }
+
+</style>
+<label class="my_div" text="Uncheck to sort by pathologist"><input type="checkbox" >Sort by days since accessioning</label>
+<script type="text/javascript" src="../../lib/d3.js"></script>
+
+<script>
+    var margin = {top: 300, right: 20, bottom: 100, left: 30},
+            width = 960 - margin.left - margin.right,
+            height = 700 - margin.top - margin.bottom;
+
+    var formatPercent = d3.format(".0%");
+
+    var x = d3.scaleBand().range([0, width], .1, 1);
+
+    var y = d3.scaleLinear()
+            .range([height, 0]);
+
+    var svg = d3.select("body").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+    var div = d3.select("body").append("div").classed("my_div",true);
+
+    // that is actually pretty cool!
+    // d3 sets a typical ordinal scale with a range of colors!
+    // there is no domain there yet - in other words there are no values associated with colors they are assigned when we add "fill" attribute
+    //below
+
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
+
+    var legendRectSize = 18;                                  // NEW
+    var legendSpacing = 4;                                    // NEW
+
+
+    d3.tsv("../../data/aut2.tsv",
+            function (error, data)
+    {
+        data.forEach(function (d)
+        {
+            d.delay = +d.delay;  //here we simply convert delay to int on the same object - a js trick
+        });
+
+        //considering that x is a scale band defined earlier as var x = d3.scaleBand().range([0, width], .1, 1);
+        //we now add data domain - so we call the domain setter function
+        //data.map creates an empty map and then we assign a value for each position associated with the domain
+        //in this example data comes with 51 values and each takes its corresponding position on the ordinal scale
+        x.domain(data.map(function (d)
+        {
+            return d.specnum_formatted;
+        }));
+
+        //this is simpler we have linear scale and our domain has a range from 0 to the max of the data (array of objects) by delay
+        //the simplification here that language does for each behind the scenes
+        //looks like d3.max is a function that takes and array "data" and does for each loop internally
+        //d therefore is an element of that data array (in this case an array of objects) and then we can access d.delay instead of doing a loop here
+        //it is done for us!
+        y.domain([0, d3.max(data, function (d)
+        {
+            return d.delay;
+        })]);
+
+        //then we ask the system to draw axes and set text - transform translate creates moveto and moves objects rotate is another way to move them
+        svg.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(x)).selectAll("text")
+                .attr("y", 5)
+                .attr("x", 5)
+                .attr("dy", ".35em")
+                .attr("transform", "rotate(65)")
+                .style("text-anchor", "start");
+
+        svg.append("g")
+                .attr("class", "y axis")
+                .call(d3.axisLeft(y))
+                .append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 6)
+                .attr("dy", ".71em")
+                .style("text-anchor", "end")
+                .text("delay");
+
+        
+        svg.selectAll(".bar")
+                .data(data)
+                .enter().append("rect")
+                .attr("class", "bar")
+                .attr("x", function (d)
+                {
+                    return x(d.specnum_formatted);
+                })
+                .attr("width", x.bandwidth() - 0.5)
+                .attr("y", function (d)
+                {
+                    return y(d.delay);
+                })
+                .attr("height", function (d)
+                {
+                    return height - y(d.delay);
+                }).attr('fill', function (d, i)
+        {
+            return color(d.p_name); //after that step color has domain elements as they are pushed in one by one.
+        }) .on('mouseover', function (d, i) {
+            div.text(d.specnum_formatted +
+                    "; Waiting: " + d.delay + " days, since " + d.accession_date + "; Status: " + d.status
+                    + "; Pathologist: " + d.pathologist  + "; Resident: " + d.resident );
+        });
+
+        d3.select("input").on("change", change);
+
+        var sortTimeout = setTimeout(function ()
+        {
+            d3.select("input").property("checked", true).each(change);
+        }, 2000);
+
+
+        //this is an interesting way to add legend
+        //we first "select" elements with legend class
+        //that we associate data with all elements in that domain! These are all our pathologists.
+        //the "color" for fill and stroke is a function that takes element of color domain that we assigned
+        //so it will call color("BRADDOCK, DEMETRIOS") on the first rectangle and will get back the color #1f77b4
+        // a more clear way to write it is
+        /*
+         function (d)
+         {
+         return color(d);
+         }
+
+         Apparently this is js shorthand for loops
+         */
+
+        var legend = svg.selectAll('.legend')                     // NEW
+                .data(color.domain())                                   // NEW
+                .enter()                                                // NEW
+                .append('g')                                            // NEW
+                .attr('class', 'legend')                                // NEW
+                .attr('transform', function (d, i)
+                {                     // NEW
+                    var legendHeight = legendRectSize + legendSpacing;          // NEW
+                    var legendOffset = legendHeight * color.domain().length / 2;     // NEW
+                    var horz = -2 * legendRectSize;                       // NEW
+                    var vert = i * legendHeight - legendOffset - (margin.top - legendHeight - margin.bottom);                       // NEW
+                    return 'translate(' + horz + ',' + vert + ')';        // NEW
+                });                                                     // NEW
+
+        legend.append('rect')                                     // NEW
+                .attr('width', legendRectSize)                          // NEW
+                .attr('height', legendRectSize)                         // NEW
+                .style('fill', function (d)                               //this is equivalent to the call below without a function - it is assumed!
+                {
+                    return color(d);
+                })                                   // NEW
+                .style('stroke', color);                                // NEW
+
+        legend.append('text')                                     // NEW
+                .attr('x', legendRectSize + legendSpacing)              // NEW
+                .attr('y', legendRectSize - legendSpacing)              // NEW
+                .text(function (d)
+                {
+                    return d;
+                });
+
+
+        function change()
+        {
+            clearTimeout(sortTimeout);
+            // Copy-on-write since tweens are evaluated after a delay.
+
+            var x0 = x.domain(data.sort(this.checked
+                    ? function (a, b)
+                    {
+                        return b.delay - a.delay;
+                    }
+                    : function (a, b)
+                    {
+                        if (a.p_name === b.p_name)
+                        {
+                            return b.delay - a.delay;
+
+                        } else
+                        {
+                            return d3.ascending(a.p_name, b.p_name);
+                        }
+                    })
+                    .map(function (d)
+                    {
+                        return d.specnum_formatted;
+                    }))
+                    .copy();
+
+            svg.selectAll(".bar")
+                    .sort(function (a, b)
+                    {
+                        return x0(a.p_name) - x0(b.p_name);
+                    });
+
+            var transition = svg.transition().duration(750),
+                    delay = function (d, i)
+                    {
+                        return i * 50;
+                    };
+
+            transition.selectAll(".bar")
+                    .delay(delay)
+                    .attr("x", function (d)
+                    {
+                        return x0(d.specnum_formatted);
+                    });
+
+            transition.select(".x.axis")
+                    .call(d3.axisBottom(x))
+                    .selectAll("g").selectAll("text")
+                    .attr("y", 5)
+                    .attr("x", 5)
+                    .attr("dy", ".35em")
+                    .attr("transform", "rotate(65)")
+                    .style("text-anchor", "start")
+                    .delay(delay);
+        }
+    });
+</script>
